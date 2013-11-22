@@ -230,11 +230,10 @@ sub new{
 	if(@_){
 		if(@_%2){ # input is string to split
 			my %self;
-			@self{'id','desc', 'seq'} = shift =~ m/
-				(?:>?(\S*))			# id, >? for records
-				(?:[^\S\n]([^\n]+))?\n	# desc, optional
-				(.+)				# seq
-			/xs;					# . includes \n
+			my $head;
+			($head, $self->{seq}) = split("\n", shift, 2);
+			($self->{id}) = $head =~ />?(\S*)/;
+			($self{desc}) = $head =~ /[^\S\n](.+)$/;
 			$self = {
 				%$self,
 				%self,
