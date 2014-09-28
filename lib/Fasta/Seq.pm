@@ -15,7 +15,7 @@ use overload
 	'""' => \&string;
 
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our ($REVISION) = '$Revision$' =~ /(\d+)/;
 our ($MODIFIED) = '$Date$' =~ /Date: (\S+\s\S+)/;
 
@@ -178,7 +178,7 @@ sub Complement{
 sub Reverse_complement{
 	my ($class, $seq) = @_;
 	$seq =~ tr/ATGCatgc/TACGtacg/;
-	return reverse $seq;
+	return scalar reverse $seq;
 }
 
 ##------------------------------------------------------------------------##
