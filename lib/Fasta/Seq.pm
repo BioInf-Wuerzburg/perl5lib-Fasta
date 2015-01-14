@@ -503,7 +503,7 @@ sub string{
     if($lw){
         my $s = "";
         $s.= $_."\n" for unpack "(A$lw)*", $self->{seq};
-        return $self->{seq_head}."\n".$s);
+        return $self->{seq_head}."\n".$s;
     }else{
         return $self->{seq_head}."\n".$self->{seq}."\n";
     }
