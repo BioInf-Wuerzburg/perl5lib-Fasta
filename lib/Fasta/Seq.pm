@@ -493,12 +493,15 @@ Get entire sequence as FASTA string. Provide optional line width.
 
 sub string{
 	my ($self, $lw) = @_;
-	my $s = $self->{seq};
-	if($lw){
-		$lw++;
-		my $o=-1;
-		substr($s, $o, 0, "\n") while (($o+=$lw) < length($s));
-	}
+	# my $s = $self->{seq};
+	# if($lw){
+	# 	$lw++;
+	# 	my $o=-1;
+	# 	substr($s, $o, 0, "\n") while (($o+=$lw) < length($s));
+	# }
+        my $s = "";
+        $s.= $_."\n" for unpack "(A$lw)*", $self->{seq};
+        chomp($s);
 	return sprintf("%s\n%s\n", $self->{seq_head}, $s);
 }
 
