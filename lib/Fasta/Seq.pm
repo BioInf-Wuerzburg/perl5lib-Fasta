@@ -492,17 +492,21 @@ Get entire sequence as FASTA string. Provide optional line width.
 =cut
 
 sub string{
-	my ($self, $lw) = @_;
-	# my $s = $self->{seq};
-	# if($lw){
-	# 	$lw++;
-	# 	my $o=-1;
-	# 	substr($s, $o, 0, "\n") while (($o+=$lw) < length($s));
-	# }
+    my ($self, $lw) = @_;
+    
+    # my $s = $self->{seq};
+    # if($lw){
+    # 	$lw++;
+    # 	my $o=-1;
+    # 	substr($s, $o, 0, "\n") while (($o+=$lw) < length($s));
+    # }
+    if($lw){
         my $s = "";
         $s.= $_."\n" for unpack "(A$lw)*", $self->{seq};
-        chomp($s);
-	return sprintf("%s\n%s\n", $self->{seq_head}, $s);
+        return $self->{seq_head}."\n".$s);
+    }else{
+        return $self->{seq_head}."\n".$self->{seq}."\n";
+    }
 }
 
 
