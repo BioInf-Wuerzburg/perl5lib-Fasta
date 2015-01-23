@@ -436,9 +436,9 @@ NOTE: In case a string is provided, make sure it contains trailing newline
 =cut
 
 sub append_seq{
-	my ($self, $seq) = @_;
+	my ($self, $seq, $lw) = @_;
 	my $pos = tell($self->{fh});
-	print {$self->{fh}} "$seq";
+	print {$self->{fh}} $seq->string($lw);
 	return $pos;
 }
 
