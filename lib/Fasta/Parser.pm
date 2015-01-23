@@ -14,7 +14,7 @@ use lib '../';
 use Fasta::Seq 0.06;
 
 
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our ($REVISION) = '$Revision$' =~ /(\d+)/;
 our ($MODIFIED) = '$Date$' =~ /Date: (\S+\s\S+)/;
 
@@ -250,6 +250,7 @@ sub check_format{
 	die sprintf("%s: %s",(caller 0)[3],"Format checking only works at the start of the file") 
 		if tell($fh);
 	my $c =$fh->getc(); # read first char
+        return undef unless $c; # empty file
 	$fh->ungetc(ord($c)); # unread first char
 	# read first char
 	return $c eq '>' ? $self : undef;
