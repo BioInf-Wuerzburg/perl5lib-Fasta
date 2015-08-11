@@ -9,7 +9,7 @@ use List::Util;
 # preference libs in same folder over @INC
 use lib '../';
 
-use Fasta::Seq 0.06;
+use Fasta::Seq 0.9.0;
 
 our $VERSION = '1.0.0';
 
