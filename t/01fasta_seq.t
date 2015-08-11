@@ -231,13 +231,13 @@ subtest '$obj->cat' => sub{
 subtest '$obj->complement' => sub{
 	can_ok($class, 'complement');
 	$fa->seq('ATGCatgcAATTT');
-	is($fa->complement(), 'TACGtacgTTAAA', 'complement()');
+	is($fa->complement->seq, 'TACGtacgTTAAA', 'complement()');
 };
 
 subtest '$obj->reverse_complement' => sub{
 	can_ok($class, 'reverse_complement');
 	$fa->seq('ATGCatgcAATTT');
-	is($fa->reverse_complement(), 'AAATTgcatGCAT', 'reverse_complement()');
+	is($fa->reverse_complement->seq, 'AAATTgcatGCAT', 'reverse_complement()');
 };
 
 
