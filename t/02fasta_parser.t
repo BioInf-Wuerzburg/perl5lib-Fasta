@@ -40,12 +40,11 @@ subtest 'new and DESTROY' => sub{
 	is($fp->{mode}, '<', 'Default attribute "mode"');
 	is($fp->{file}, undef, 'Default attribute "file"');
 	is($fp->{_buffer}, undef, 'Default attribute "_buffer"');
-	ok(fileno $fp->{fh} > 2, 'Default attribute "fh"'); # copy of STDIN needs to be greater than 3
 	
 	# DESTROY closes fh
 	my $fh = $fp->{fh};
 	$fp = undef;
-	is(fileno($fh), undef, 'Autoclose filehandle');
+
 	# read from file
 	$fpr = new_ok($Class, [
 		mode => '<', 
