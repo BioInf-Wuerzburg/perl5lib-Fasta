@@ -11,11 +11,11 @@ use lib '../';
 
 use Fasta::Seq 0.9.0;
 
-our $VERSION = '1.0.0';
+our $VERSION = '1.0.1';
 
 ##------------------------------------------------------------------------##
 
-=head1 NAME 
+=head1 NAME
 
 Fasta::Parser.pm
 
@@ -34,12 +34,12 @@ Parser module for Fasta format files.
 
 =head2 new
 
-Initialize a fasta parser object. Takes parameters in key => value format. 
+Initialize a fasta parser object. Takes parameters in key => value format.
  Parameters are:
 
   fh => undef,
   file => undef,
-  mode => '<',   # read, 
+  mode => '<',   # read,
                  # '+>': read+write (clobber file first)
                  # '+<': read+write (append)
                  # '>' : write (clobber file first)
@@ -49,7 +49,7 @@ Initialize a fasta parser object. Takes parameters in key => value format.
 
 sub new{
 	my $class = shift;
-	
+
 	# defaults=
 	my $self = {
 		fh => undef,
@@ -65,36 +65,25 @@ sub new{
 
 	bless $self, $class;
 
+	my $fh;
 	# open file in read/write mode
-	if($self->{file}){
-		my $fh;
-		open ( $fh , $self->{mode}, $self->{file}) or die sprintf("%s: %s, %s",(caller 0)[3],$self->{file}, $!);
-		$self->{fh} = $fh;
-		if(ref $self->{file} eq 'SCALAR'){
-			$self->{_is_fh} = 2;
-		}elsif(-f $self->{file}){
-			$self->{_is_fh} = 0;
-		}else{
-			die sprintf("%s: %s",(caller 0)[3],"file neither plain file nor SCALAR reference");
-		}
-	}else{
-		if($self->{fh}){
-			$self->fh($self->{fh});
-		}else{
-			#open(my $fh, "<&STDIN") or die $!;
-			my $fh = \*STDIN;
-			$self->{fh} = $fh;
-			$self->{_is_fh} = 1;
-		}
-	}
-	
+	if ($self->{file}) {
+            open ($fh, $self->{mode}, $self->{file}) or die sprintf("%s: %s, %s",(caller 0)[3],$self->{file}, $!);
+            $self->fh($fh);
+	} elsif ($self->{fh}) {
+            $self->fh($self->{fh});
+        } else {
+            $self->fh(\*STDIN);
+        }
+
 	return $self;
 }
 
 sub DESTROY{
 	# just to be sure :D
-	my $self = shift;
-	close $self->fh unless $self->is_fh('PIPE');
+    	my $self = shift;
+    	# messy, because "<test.fa" is not -p/t file while /proc/.. is
+    	close $self->fh unless $self->is_fh('PIPE');
 }
 
 
@@ -114,16 +103,16 @@ Loop through fasta file and return next 'Fasta::Seq' object.
 
 sub next_seq{
 	my ($self) = @_;
-	
+
 	my $fh = $self->{fh};
 	local $/ = "\n>";
-	
+
 	# return fasta seq object
 	my $byte_offset = tell($fh);
 	my $fa = <$fh>;
 	unless(defined $fa){
 		seek($fh,0,0); # reset to file start
-		return 
+		return
 	};
 	chomp($fa);
 	return Fasta::Seq->new($fa, byte_offset => $byte_offset);
@@ -134,8 +123,8 @@ sub next_seq{
 
 =head2 check_format
 
-Takes a peek at the first entry in the file and checks wether the format of 
- the input looks like FASTA (leading >). Returns the Parser object on 
+Takes a peek at the first entry in the file and checks wether the format of
+ the input looks like FASTA (leading >). Returns the Parser object on
  success, undef on failure. Does not modify the input stream, therefore
  can be used on STDIN safely.
 
@@ -148,7 +137,7 @@ NOTE: It only works at the start of the input. This means for pipes, use it
 sub check_format{
 	my ($self) = @_;
 	my $fh = $self->fh;
-	die sprintf("%s: %s",(caller 0)[3],"Format checking only works at the start of the file") 
+	die sprintf("%s: %s",(caller 0)[3],"Format checking only works at the start of the file")
 		if tell($fh);
 	my $c =$fh->getc(); # read first char
         return undef unless $c; # empty file
@@ -175,11 +164,11 @@ sub seek{
 
 =head2 sample_seqs
 
-Sample reads from file. If used on pipe returns undef. Takes 
+Sample reads from file. If used on pipe returns undef. Takes
  one argument, the number of reads to sample, default 1000. If the file is
- smaller than 10MB, the file is read entirely, else reads from random 
+ smaller than 10MB, the file is read entirely, else reads from random
  positions are read. Returns LIST of Fastq::Seq objects.
- 
+
 =cut
 
 sub sample_seqs{
@@ -187,19 +176,19 @@ sub sample_seqs{
 	my $fh = $self->fh;
 	my $i;
 	my @seqs;
-	
+
 	my $file_pos = tell($fh);
 
 	# can seek on file: sample random reads
 	my $size;
-	
+
 	if($self->is_fh('FILE')){
 		$size = -s $fh;
 	}elsif($self->is_fh('SCALAR') && ref $self->{file} eq 'SCALAR'){
 		$size = length ${$self->{file}};
 	}else{
 		return;
-	} 
+	}
 
 	if($size < 10_000_000){
 		$self->seek(0);
@@ -208,22 +197,22 @@ sub sample_seqs{
 		push @fas, $fa while $fa = $self->next_seq();
 		my @shuffled_fas = List::Util::shuffle(@fas);
 		@seqs = @shuffled_fas > $n
-			? @shuffled_fas[0..$n-1] 
-			: @shuffled_fas; 
+			? @shuffled_fas[0..$n-1]
+			: @shuffled_fas;
 	}else{
 		$size -= $size/100; # reduce size by 1% to prevent sampling eof
-	
+
 		for($i=$n;$i>0;$i--){
 			$self->seek(int(rand($size))); # jump to random pos
 			local $/ = "\n>";
 			scalar <$fh>; # make sure to get a record start
 			my $fa = $self->next_seq(); # get next record
-			
+
 			if($fa){
 				push @seqs, $fa;
 			}else{	# eof
 				$i++; # do one more iteration
-			}; 
+			};
 		}
 	}
 
@@ -236,8 +225,8 @@ sub sample_seqs{
 
 =head2 guess_seq_length
 
-Reads N sequences, randomly sampled if input is file and returns rounded 
- READLENGTH,STDDEV or undef on pipe, failure or empty file. Provide N as 
+Reads N sequences, randomly sampled if input is file and returns rounded
+ READLENGTH,STDDEV or undef on pipe, failure or empty file. Provide N as
  the first parameter, default 1000.
 
 =cut
@@ -246,29 +235,29 @@ sub guess_seq_length{
 	my ($self, $n) = (@_, 1000);
 	my $fh = $self->fh;
 	my $i;
-	
+
 	my @sample_seqs = $self->sample_seqs($n);
-	
+
 	return undef unless @sample_seqs;
-	
+
 	my $l_total;
 	my @lengths = map{my $l = length($_->seq); $l_total+=$l; $l}@sample_seqs;
-	
+
 	# empty file
 	return undef unless $l_total;
-	
+
 	my $mean_l = $l_total/@sample_seqs;
 	my $stddev = _stddev(\@lengths, $mean_l);
 	# round mean
-	return (int($mean_l + 0.5), int($stddev + 0.5)); 
+	return (int($mean_l + 0.5), int($stddev + 0.5));
 }
 
 
 =head2 guess_seq_count
 
 Reads up to n reads from the current position of the file and estimates the
- mean size in bytes per FASTA record. Extrapolates the number sequences to 
- match the file size and returns the thus approximated total number of 
+ mean size in bytes per FASTA record. Extrapolates the number sequences to
+ match the file size and returns the thus approximated total number of
  sequences. Returns undef on STDIN.
 
 =cut
@@ -291,7 +280,7 @@ sub guess_seq_count{
 
 =head2 is_fh
 
-Determine the type of the filehandle. Without parameter, returns 0 for 
+Determine the type of the filehandle. Without parameter, returns 0 for
  handle to FILE, 1 for PIPE, and 2 for a handle to a SCALAR.
 Alternatively you can provide the name of the type or the corresponding
  INT as single parameter. In these cases, the methods returns 1, if the
@@ -305,7 +294,7 @@ Alternatively you can provide the name of the type or the corresponding
 
 sub is_fh{
 	my ($self, $type) = @_;
-	
+
 	my %type = (
 		'FILE' => 0,
 		'PIPE' => 1,
@@ -314,11 +303,11 @@ sub is_fh{
 		1 => 1,
 		2 => 2,
 	);
-	
+
 	if(defined $type){
-		die sprintf("%s: %s",(caller 0)[3],"unknown type $type") 
+		die sprintf("%s: %s",(caller 0)[3],"unknown type $type")
 			unless exists $type{$type};
-		
+
 		return $type{$type} == $self->{_is_fh} ? 1 : 0;
 	}
 
@@ -331,7 +320,7 @@ sub is_fh{
 Append an sequence to the file, provided as object or string. Returns the
  byte offset position in the file.
 
-NOTE: In case a string is provided, make sure it contains trailing newline 
+NOTE: In case a string is provided, make sure it contains trailing newline
  since no further test is performed.
 
 =cut
@@ -368,7 +357,7 @@ sub _stddev{
 	my($values, $mean1) = (@_);
 	#Prevent division by 0 error in case you get junk data
 	return undef unless scalar @$values;
-	
+
 	# calculate mean unless given
 	unless(defined $mean1){
 		# Step 1, find the mean of the numbers
@@ -376,14 +365,14 @@ sub _stddev{
 		$total1 += $_  for @$values;
 		my $mean1 = $total1 / (scalar @$values);
 	}
-	
-	
+
+
 	# find the mean of the squares of the differences
 	# between each number and the mean
 	my $total2 = 0;
 	$total2 += ($mean1-$_)**2 for @$values;
 	my $mean2 = $total2 / (scalar @$values);
-	
+
 	# standard deviation is the square root of the
 	# above mean
 	return sqrt($mean2);
@@ -403,22 +392,22 @@ Get/Set the file handle.
 
 sub fh{
 	my ($self, $fh) = @_;
-	
+
 	if($fh){
-		if(-f $fh){
-			$self->{_is_fh} = 0;
-		}elsif(-p $fh or  -t $fh){
-			$self->{_is_fh} = 1;
-		}else{
-			$self->{_is_fh} = 2;
-		}
-		$self->{fh} = $fh 
+            if(-p $fh or  -t $fh){
+                $self->{_is_fh} = 1;
+            }elsif(-f $fh){
+                $self->{_is_fh} = 0;
+            }elsif(ref $fh eq 'SCALAR'){
+                $self->{_is_fh} = 2;
+            }else{
+                die sprintf("%s: %s",(caller 0)[3],"Unknown filehandle type");
+            }
+            $self->{fh} = $fh;
 	}
-	
+
 	return $self->{fh};
 }
-
-
 
 
 ##------------------------------------------------------------------------##
@@ -432,6 +421,3 @@ Thomas Hackl S<thomas.hackl@uni-wuerzburg.de>
 
 
 1;
-
-
-
