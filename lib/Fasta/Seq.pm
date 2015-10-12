@@ -12,7 +12,7 @@ use overload
     '""' => \&string;
 
 
-our $VERSION = '0.9.0';
+our $VERSION = '0.9.1';
 our ($REVISION) = '$Revision$' =~ /(\d+)/;
 our ($MODIFIED) = '$Date$' =~ /Date: (\S+\s\S+)/;
 
@@ -392,19 +392,24 @@ sub desc_append{
 
 =head2 string([LINEWIDTH])
 
-Get entire sequence as FASTA string. Provide optional line width.
+Get entire sequence as FASTA string. Takes line_width => INT, default 80, 0 for single line, and fastq => CHAR to return FASTQ string.
 
 =cut
 
 sub string{
-    my ($self, $lw) = @_;
-    
-    # my $s = $self->{seq};
-    # if($lw){
-    # 	$lw++;
-    # 	my $o=-1;
-    # 	substr($s, $o, 0, "\n") while (($o+=$lw) < length($s));
-    # }
+    my ($self, $lw) = (@_);
+    if ( @_ != 2 && defined $lw) { # not single/no option: overloaded (undef) or single opt line width
+        my %p = (line_width => 80, @_[1..$#_]);
+        if ($p{fastq}) { # return FASTQ string
+            return '@'.(substr ($self->{seq_head}, 1))."\n".
+                $self->{seq}."\n+\n".
+                ($p{fastq} x length($self->seq))."\n";
+        }else {
+            $lw = $p{line_width};
+        }
+    }
+
+    $lw //= 80; # default line width is 80
     if($lw){
         my $s = "";
         $s.= $_."\n" for unpack "(A$lw)*", $self->{seq};
