@@ -11,7 +11,8 @@ use lib '../';
 
 use Fasta::Seq 0.9.0;
 
-our $VERSION = '1.0.1';
+our $VERSION = '1.0.2';
+
 
 ##------------------------------------------------------------------------##
 
@@ -24,11 +25,6 @@ Fasta::Parser.pm
 Parser module for Fasta format files.
 
 =head1 SYNOPSIS
-
-=cut
-
-
-##------------------------------------------------------------------------##
 
 =head1 Constructor METHOD
 
@@ -56,6 +52,7 @@ sub new{
 		file => undef,
 		mode => '<',
 		_is_fh => undef, # 0 => FILE, 1 => PIPE, 2 => SCALAR
+                _close_fh => 0,
 		@_	# overwrite defaults
 	};
 
@@ -67,8 +64,9 @@ sub new{
 
 	my $fh;
 	# open file in read/write mode
-	if ($self->{file}) {
+	if ($self->{file} && $self->{file} ne '-') {
             open ($fh, $self->{mode}, $self->{file}) or die sprintf("%s: %s, %s",(caller 0)[3],$self->{file}, $!);
+            $self->{_close_fh} = 1;
             $self->fh($fh);
 	} elsif ($self->{fh}) {
             $self->fh($self->{fh});
@@ -83,7 +81,8 @@ sub DESTROY{
 	# just to be sure :D
     	my $self = shift;
     	# messy, because "<test.fa" is not -p/t file while /proc/.. is
-    	close $self->fh unless $self->is_fh('PIPE');
+        # only close files opened with Parser
+    	close $self->fh if $self->{_close_fh};
 }
 
 
