@@ -8,7 +8,7 @@ use Log::Log4perl;
 use Handy qw(require_exe);
 use Fasta::Seq;
 
-our $VERSION = '0.1.1';
+our $VERSION = '0.1.2';
 
 =head1 NAME
 
@@ -91,7 +91,7 @@ sub fetch{
     my ($self, $id) = @_;
     die (((caller 0)[3]).": id or region required\n") unless defined $id;
     $id =~ s/^[>@]//;
-    my $cmd = $self->fai_cmd." $id";
+    my $cmd = $self->fai_cmd." '$id'";
     my $fa = scalar qx/$cmd/;
     $? && die $?>>8;
     return Fasta::Seq->new($fa);
