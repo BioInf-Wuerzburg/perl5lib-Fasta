@@ -8,7 +8,9 @@ use strict;
 # preference libs in same folder over @INC
 use lib '../';
 
-use Verbose;
+#use Verbose;
+
+use Log::Log4perl;
 
 use overload
 	'.' => \&cat,
@@ -135,7 +137,9 @@ Verbose messages are handled using the Verbose.pm module. To
 
 =cut
 
-our $V = Verbose->new();
+#our $V = Verbose->new();
+
+my $L = Log::Log4perl::get_logger();
 
 our $Base_content_scans = {
 	'N' => sub{	return $_[0] =~ tr/'N'// },
@@ -353,7 +357,7 @@ sub cat{
 	my $class = shift unless ref $_[0]; # class usage
 	my ($s1, $s2, $swap) = @_;
 	unless(ref $s1){
-		die 'At least one operand has to be as Fasta::Seq object' unless ref $s2;
+		$L->logdie('At least one operand has to be as Fasta::Seq object') unless ref $s2;
 		($s1,$s2) = ($s2,$s1);
 		$swap = $swap ? 0 : 1; # toggle swap
 	}
@@ -421,7 +425,7 @@ sub substr_seq{
 
 		my ($o, $l, $r) = ref $_[0] ? @{$_[0]} : @_;
 					
-		die __PACKAGE__."::substr_seq: Not enougth arguments\n" 
+		$L->logdie(__PACKAGE__."::substr_seq: Not enougth arguments\n") 
 			unless defined ($o);
 		
 		# replace
@@ -446,7 +450,7 @@ sub substr_seq{
 	
 			my ($o, $l, $r) = @$_;
 			
-			die __PACKAGE__."::substr_seq: Not enougth arguments\n" 
+			$L->logdie(__PACKAGE__."::substr_seq: Not enougth arguments\n") 
 				unless defined ($o);
 			
 			# replace
