@@ -10,7 +10,7 @@ use lib '../';
 
 #use Verbose;
 
-use Log::Log4perl;
+use Log::Log4perl qw(:easy);
 
 use overload
 	'.' => \&cat,
