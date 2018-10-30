@@ -12,13 +12,14 @@ use overload
     '""' => \&string;
 
 
+
 our $VERSION = '1.0.0';
 our ($REVISION) = '$Revision$' =~ /(\d+)/;
 our ($MODIFIED) = '$Date$' =~ /Date: (\S+\s\S+)/;
 
 ##------------------------------------------------------------------------##
 
-=head1 NAME 
+=head1 NAME
 
 Fasta::Seq.pm
 
@@ -48,7 +49,7 @@ our $Base_content_scans = {
 	'T' => sub{	return $_[0] =~ tr/'T'// },
 	'G' => sub{	return $_[0] =~ tr/'G'// },
 	'C' => sub{	return $_[0] =~ tr/'C'// },
-}; 
+};
 
 ##------------------------------------------------------------------------##
 
@@ -70,11 +71,11 @@ sub Add_base_content_scan{
 
 =cut
 
-sub Complement{	
+sub Complement{
 	my ($class, $seq) = @_;
 	$seq =~ tr/ATGCatgc/TACGtacg/;
-	return $seq; 
-} 
+	return $seq;
+}
 
 =head2 Reverse_complement
 
@@ -93,7 +94,7 @@ sub Reverse_complement{
 
 =head2 new
 
-Create a new FASTA seq object. Either provide a single STRING 
+Create a new FASTA seq object. Either provide a single STRING
  containing one FASTA record or a key => value construct, for which
  either C<seq_head> or C<id> is required.
 
@@ -132,7 +133,7 @@ sub new{
                                 window_offset => 0,
 			};
 	}
-	
+
 	if(@_){
 		if(@_%2){ # input is string to split
 			my %self;
@@ -151,13 +152,13 @@ sub new{
 			}else{
 				$self->{desc} = '';
 			}
-	
+
 		}else{
 			$self = {
 				%$self,
 				@_	# overwrite defaults
 			};
-			
+
 			# make sure, id has not leading '>'
 			$self->{id} =~ s/^>// if $self->{id};
 			# make sure there is a seq_head entry
@@ -168,10 +169,10 @@ sub new{
 				my($id,$desc) = $self->{seq_head} =~ m/
 					(?:>?(\S*))			# id, >? for records
 					(?:[^\S\n]([^\n]+))?		# desc, optional
-				/xs;	
-				$self->{id} = $id; 
+				/xs;
+				$self->{id} = $id;
 				$self->{desc} = $desc || '';
-				
+
 			}
 		}
 		# make sure, head has leading '>'
@@ -180,7 +181,7 @@ sub new{
 		chomp($self->{seq_head});
 		$self->{seq} =~ tr/\n//d; 	# remove all newlines from seq
 	}
-	
+
 #	unless($self->{id} || $self->{seq}){
 #		warn "Creation of incomplete FASTA entry: ".
 #			($self->{id} ? "sequence missing" : "id missing");
@@ -228,10 +229,10 @@ sub complement{
 
 =head2 cat
 
-Concatenate Fasta::Seq object with either another Fasta::Seq object or a 
- plain STRING (sequence only). Can be used as Class method as well as Object 
+Concatenate Fasta::Seq object with either another Fasta::Seq object or a
+ plain STRING (sequence only). Can be used as Class method as well as Object
 methods.
-Returns a new object. Keeps the id and other attributes from the first 
+Returns a new object. Keeps the id and other attributes from the first
  provided object.
 If the third parameter in Class syntax, the second one in object syntax is
  set to TRUE, the operands are swapped.
@@ -243,12 +244,12 @@ Fasta::Seq overloads "." with this method.
   $fba = Fasta::Seq->cat($fa, $fb, 1); # swap order
   $faATGC = Fasta::Seq->cat($fa, 'ATGC'); # append plain sequence
   $fATGCa = Fasta::Seq->cat('ATGC', $fa); # prepend plain sequence
-  
+
   # Object method
   $fab = $fa->cat($fb);
   $fba = $fa->cat($fb, 1); # swap order
   $fba = $fa->cat('ATGC', 1); # append + swap -> prepend plain sequence
-  
+
   # Overload
   $fATGCa = 'ATGC'.$fb; # prepend
   $fa.= $fb; # append by $fb and overwrite $fa
@@ -263,7 +264,7 @@ sub cat{
 		($s1,$s2) = ($s2,$s1);
 		$swap = $swap ? 0 : 1; # toggle swap
 	}
-	
+
 	my $re = $s1->new; # clone
 	if($swap){
 		$re->seq(ref $s2
@@ -276,7 +277,7 @@ sub cat{
 			: $re->seq.$s2
 		);
 	}
-	
+
 	return $re;
 }
 
@@ -295,9 +296,9 @@ sub base_content{
 
 =head2 substr_seq
 
-Substr sequence. Takes the same parameter as perls C<substr>, either plain 
- or as a LIST of ARRAYREFS, each containing a set of parameter to allow for 
- multiple operations at once. 
+Substr sequence. Takes the same parameter as perls C<substr>, either plain
+ or as a LIST of ARRAYREFS, each containing a set of parameter to allow for
+ multiple operations at once.
 
 In the first case the objects sequence is modified, the description appended
  by SUBSTR:<OFFSET>,<LENGTH> and the modified object is returned.
@@ -310,7 +311,7 @@ Methods like qual_low or qual_lcs provide these kind of LIST of ARRAYREFS.
   $fq->substr_seq(5,-5);    # nt 5 to fifth nt from the end
   $fq->substr_seq(-5)		# last 5 nts
   $fq->substr_seq(-100,50)  # 50 nts, starting 100 from end
-  $fq->substr_seq(10,5,"AAAA") # replace 5 nts starting at pos 10 
+  $fq->substr_seq(10,5,"AAAA") # replace 5 nts starting at pos 10
     with 4 "A"s and replace corresponding qual values.
   ($fq1, $fq2) = $fq->substr_seq([5,100], [200,500]);
     # nts 5 to 100 and 200 to 500
@@ -320,16 +321,16 @@ Methods like qual_low or qual_lcs provide these kind of LIST of ARRAYREFS.
 
 sub substr_seq{
 	my $self = shift;
-	
+
 	if(! ref $_[0] || @_ == 1){
-		
+
 		my $fa = $self->new; # clone
 
 		my ($o, $l, $r) = ref $_[0] ? @{$_[0]} : @_;
-					
-		die __PACKAGE__."::substr_seq: Not enougth arguments\n" 
+
+		die __PACKAGE__."::substr_seq: Not enougth arguments\n"
 			unless defined ($o);
-		
+
 		# replace
 		if(defined $r){
 			$fa->desc_append(sprintf("SUBSTR:%d,%d", $o, $l));
@@ -349,12 +350,12 @@ sub substr_seq{
 			$clone_c++;
 			my $fa = $self->new; # clone
 			$fa->id($fa->id.".$clone_c");
-	
+
 			my ($o, $l, $r) = @$_;
-			
-			die __PACKAGE__."::substr_seq: Not enougth arguments\n" 
+
+			die __PACKAGE__."::substr_seq: Not enougth arguments\n"
 				unless defined ($o);
-			
+
 			# replace
 			if(defined $r){
 				$fa->desc_append(sprintf("SUBSTR:%d,%d", $o, $l));
@@ -366,11 +367,11 @@ sub substr_seq{
 				$fa->desc_append(sprintf("SUBSTR:%d", $o));
 				$fa->seq( substr($fa->{seq}, $o) );
 			}
-			push @new_fas, $fa; 
+			push @new_fas, $fa;
 		}
 		return @new_fas;
 	}
-	
+
 }
 
 =head2 desc_append
@@ -427,15 +428,31 @@ Move along sequence, returning subsequences of given SIZE. Last window will be >
 =cut
 
 sub next_window{
-    my ($self, $size, $shift) = @_;
+    my ($self, $size, $shift, $overhang) = @_;
     $shift//= $size;
+    $overhang//= "keep";
     die "size and shift need to be > 0" unless ($size > 0 and $shift > 0);
 
-    return undef if !defined($self->{window_offset});
+    if(!defined($self->{window_offset})){
+        $self->{window_offset} = 0;
+        return undef
+    };
+
     my $offset = $self->{window_offset};
-    if($offset+$size+$shift > $self->length){ # last window
-        $self->{window_offset} = undef;
-        $self->substr_seq($offset);
+    if($offset+$shift+$size > $self->length){ # next win is overhang
+        if ($overhang eq "keep") { # keep slicing overhang
+            $self->{window_offset} = $offset+$shift;
+            $self->{window_offset} = undef if $self->{window_offset} >= $self->length;
+            $self->substr_seq($offset, $size);
+        }elsif ($overhang eq "drop") { # return window, ignore overhang
+            $self->{window_offset} = undef;
+            $self->substr_seq($offset, $size);
+        }elsif ($overhang eq "merge") { # return window + overhang
+            $self->{window_offset} = undef;
+            $self->substr_seq($offset);
+        }else {
+            die "unknown mode $overhang for handling overhang window";
+        }
     }else {
         $self->{window_offset} =  $offset+$shift;
         $self->substr_seq($offset, $size);
@@ -463,8 +480,8 @@ sub seq_head{
 		my($id,$desc) = shift =~ m/
 			(?:>?(\S+))			# id, >? for records
 			(?:\s([^\n]+))?		# desc, optional
-		/xs;	
-		$self->{id} = $id; 
+		/xs;
+		$self->{id} = $id;
 		$self->{desc} = $desc;
 	};
 	return $self->{seq_head};
@@ -480,7 +497,7 @@ sub seq{
 	my ($self, $seq) = @_;
 	if($seq){
 		$seq =~tr/\n//d;
-		$self->{seq} = $seq 
+		$self->{seq} = $seq
 	};
 	return $self->{seq};
 }
@@ -556,6 +573,3 @@ Thomas Hackl S<thomas.hackl@uni-wuerzburg.de>
 
 
 1;
-
-
-

@@ -48,7 +48,9 @@ my $seq_obj = {
 
 my $seq_string = <<SEQSTRING;
 >gi|129295|sp|P01013|OVAX_CHICK GENE X PROTEIN (OVALBUMIN-RELATED)
-QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFASGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGISSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP
+QIKDLLVSSSTDLDTTLVLVNAIYFKGMWKTAFNAEDTREMPFHVTKQESKPVQMMCMNNSFNVATLPAEKMKILELPFA
+SGDLSMLVLLPDEVSDLERIEKTINFEKLTEWTNPNTMEKRRVKVYLPQMKIEEKYNLTSVLMALGMTDLFIPSANLTGI
+SSAESLKISQAVHGAFMELSEDGIEMAGSTGVIEDIKHSPESEQFRADHPFLFLIKHNPTNTIVYFGRYWSP
 SEQSTRING
 
 my $seq_raw_no_desc = <<SEQ;
@@ -142,22 +144,22 @@ subtest 'generics: can and get' => sub{
 	is($fa->byte_offset(), $seq_obj->{byte_offset}, 'byte_offset() get');
 };
 
-subtest 'generics: set and dependencies' => sub{	
+subtest 'generics: set and dependencies' => sub{
 	# seq_head set and dependencies
 	$fa->seq_head('>some new header');
 	is($fa->{seq_head}, '>some new header', 'seq_head() set');
 	$fa->seq_head('some new header');
 	is($fa->{seq_head}, '>some new header', 'seq_head() set missing >');
-	
+
 	is($fa->id(), 'some', 'seq_head() set dependency id');
 	is($fa->desc(), 'new header', 'seq_head() set dependency desc');
-	
+
 	# id set and dependencies
 	$fa->id('foo');
 	is($fa->id(), 'foo', 'id() set');
 	is($fa->seq_head(), '>foo new header', 'id() set dependency seq_head');
 	is($fa->desc(), 'new header', 'id() set dependency desc');
-	
+
 	# desc set and dependencies
 	$fa->desc('bar');
 	is($fa->desc(), 'bar', 'desc() set');
@@ -201,19 +203,19 @@ subtest '$obj->cat' => sub{
 	my $seq_pre = $seq2.$seq1;
 	my $fa1 = Fasta::Seq->new(">id1\n".$seq1);
 	my $fa2 = Fasta::Seq->new(">id2 descr\n".$seq2);
-	
+
 	# Class Method
 	is(Fasta::Seq->cat($fa1,$fa2)->seq, $seq_app, 'cat() class method, append obj');
 	is(Fasta::Seq->cat($fa1,$fa2,1)->seq, $seq_pre, 'cat() class method, prepend obj');
 	is(Fasta::Seq->cat($fa1,$seq2)->seq, $seq_app, 'cat() class method, append seq');
 	is(Fasta::Seq->cat($seq2, $fa1)->seq, $seq_pre, 'cat() class method, prepend seq');
-	
+
 	# Object Method
 	is($fa1->cat($fa2)->seq, $seq_app, 'cat() object method, append obj');
 	is($fa1->cat($fa2, 1)->seq, $seq_pre , 'cat() object method, prepend obj');
 	is($fa1->cat($seq2)->seq, $seq_app, 'cat() object method, append seq');
 	is($fa1->cat($seq2, 1)->seq, $seq_pre , 'cat() object method, prepend seq');
-	
+
 	# Overload Method
 	ok(overload::Method($fa1, '.'),'cat() overloads "."');
 	my $fa_app_obj = $fa1.$fa2;
@@ -225,7 +227,7 @@ subtest '$obj->cat' => sub{
 	is($fa3->seq, $seq_app, 'cat() overload ".=", append obj');
 	$fa1.=$seq2;
 	is($fa1->seq, $seq_app, 'cat() overload ".=", append seq');
-	
+
 };
 
 subtest '$obj->complement' => sub{
@@ -256,14 +258,128 @@ subtest '$obj->substr_seq' => sub{
 	is($fa->substr_seq(-4)->seq, 'ATTT', 'substr_seq() -offset');
 	is($fa->substr_seq(1,-3)->seq, 'TGCatgcAA', 'substr_seq() offset, -length');
 	is($fa->substr_seq(1,-1, 'XXX')->seq, 'AXXXT', 'substr_seq() offset, -length, replacement');
-	
+
 	my @subseqs = $fa->substr_seq([1,5], [1,-1, 'XXX']);
 	is($subseqs[0]->seq, 'TGCat', 'substr_seq() batch offset, length');
 	is($subseqs[1]->seq, 'AXXXT', 'substr_seq() batch offset, -length, replacement');
 };
 
+subtest '$obj->next_window' => sub{
+    can_ok($class, 'next_window');
+    $fa = Fasta::Seq->new(">foo\n123456789");
+    my @fr;
+    my $fw;
+    my $s;
+    while ($s = <DATA>){ push @fr, $s.<DATA> }
+    my $i=0;
+
+    while($fw =$fa->next_window(5)){is("$fw", $fr[$i], "next_window() 5 keep"), $i++}
+    while($fw =$fa->next_window(4)){is("$fw", $fr[$i], "next_window() 5 keep"), $i++}
+    while($fw =$fa->next_window(3)){is("$fw", $fr[$i], "next_window() 5 keep"), $i++}
+
+    while($fw =$fa->next_window(5,4)){is("$fw", $fr[$i], "next_window() 5,4 keep"), $i++}
+    while($fw =$fa->next_window(5,3)){is("$fw", $fr[$i], "next_window() 5,3 keep"), $i++}
+    while($fw =$fa->next_window(2,4)){is("$fw", $fr[$i], "next_window() 2,4 keep"), $i++}
+
+    while($fw =$fa->next_window(5, undef, "drop")){is("$fw", $fr[$i], "next_window() 5 drop"), $i++}
+    while($fw =$fa->next_window(4, undef, "drop")){is("$fw", $fr[$i], "next_window() 4 drop"), $i++}
+    while($fw =$fa->next_window(3, undef, "drop")){is("$fw", $fr[$i], "next_window() 3 drop"), $i++}
+
+    while($fw =$fa->next_window(5,4, "drop")){is("$fw", $fr[$i], "next_window() 5,4 drop"), $i++}
+    while($fw =$fa->next_window(5,3, "drop")){is("$fw", $fr[$i], "next_window() 5,3 drop"), $i++}
+    while($fw =$fa->next_window(2,4, "drop")){is("$fw", $fr[$i], "next_window() 2,4 drop"), $i++}
+
+    while($fw =$fa->next_window(5, undef, "merge")){is("$fw", $fr[$i], "next_window() 5 merge"), $i++}
+    while($fw =$fa->next_window(4, undef, "merge")){is("$fw", $fr[$i], "next_window() 4 merge"), $i++}
+    while($fw =$fa->next_window(3, undef, "merge")){is("$fw", $fr[$i], "next_window() 3 merge"), $i++}
+
+    while($fw =$fa->next_window(5,4, "merge")){is("$fw", $fr[$i], "next_window() 5,4 merge"), $i++}
+    while($fw =$fa->next_window(5,3, "merge")){is("$fw", $fr[$i], "next_window() 5,3 merge"), $i++}
+    while($fw =$fa->next_window(2,4, "merge")){is("$fw", $fr[$i], "next_window() 2,4 merge"), $i++}
+};
+
 done_testing();
 
-__END__
-
-
+__DATA__
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:5,5
+6789
+>foo SUBSTR:0,4
+1234
+>foo SUBSTR:4,4
+5678
+>foo SUBSTR:8,4
+9
+>foo SUBSTR:0,3
+123
+>foo SUBSTR:3,3
+456
+>foo SUBSTR:6,3
+789
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:4,5
+56789
+>foo SUBSTR:8,5
+9
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:3,5
+45678
+>foo SUBSTR:6,5
+789
+>foo SUBSTR:0,2
+12
+>foo SUBSTR:4,2
+56
+>foo SUBSTR:8,2
+9
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:0,4
+1234
+>foo SUBSTR:4,4
+5678
+>foo SUBSTR:0,3
+123
+>foo SUBSTR:3,3
+456
+>foo SUBSTR:6,3
+789
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:4,5
+56789
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:3,5
+45678
+>foo SUBSTR:0,2
+12
+>foo SUBSTR:4,2
+56
+>foo SUBSTR:0
+123456789
+>foo SUBSTR:0,4
+1234
+>foo SUBSTR:4
+56789
+>foo SUBSTR:0,3
+123
+>foo SUBSTR:3,3
+456
+>foo SUBSTR:6
+789
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:4
+56789
+>foo SUBSTR:0,5
+12345
+>foo SUBSTR:3
+456789
+>foo SUBSTR:0,2
+12
+>foo SUBSTR:4
+56789
