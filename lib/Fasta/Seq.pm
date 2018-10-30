@@ -12,7 +12,7 @@ use overload
     '""' => \&string;
 
 
-our $VERSION = '0.9.1';
+our $VERSION = '1.0.0';
 our ($REVISION) = '$Revision$' =~ /(\d+)/;
 our ($MODIFIED) = '$Date$' =~ /Date: (\S+\s\S+)/;
 
@@ -512,6 +512,16 @@ sub desc{
 			: '>'.$self->{id}; # desc is '' ->remove desc
 	}
 	return $self->{desc};
+}
+
+=head2 length
+
+Get seq length.
+
+=cut
+
+sub length{
+    length($_[0]->{seq});
 }
 
 
