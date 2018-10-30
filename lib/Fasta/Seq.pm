@@ -129,6 +129,7 @@ sub new{
 				desc => '',
 				seq => '',
 				byte_offset => undef,
+                                window_offset => 0,
 			};
 	}
 	
@@ -419,6 +420,27 @@ sub string{
     }
 }
 
+=head2 next_window(SIZE, [SHIFT=SIZE+1])
+
+Move along sequence, returning subsequences of given SIZE. Last window will be >= SIZE, unless the entire sequence is < SIZE;
+
+=cut
+
+sub next_window{
+    my ($self, $size, $shift) = @_;
+    $shift//= $size;
+    die "size and shift need to be > 0" unless ($size > 0 and $shift > 0);
+
+    return undef if !defined($self->{window_offset});
+    my $offset = $self->{window_offset};
+    if($offset+$size+$shift > $self->length){ # last window
+        $self->{window_offset} = undef;
+        $self->substr_seq($offset);
+    }else {
+        $self->{window_offset} =  $offset+$shift;
+        $self->substr_seq($offset, $size);
+    }
+}
 
 ##------------------------------------------------------------------------##
 
