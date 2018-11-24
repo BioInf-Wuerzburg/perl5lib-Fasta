@@ -335,7 +335,7 @@ sub substr_seq{
 		if(defined $r){
 			$fa->desc_append(sprintf("SUBSTR:%d,%d", $o, $l));
 			substr($fa->{seq}, $o, $l, $r);
-		}elsif(defined $l){
+                    }elsif(defined $l){
 			$fa->desc_append(sprintf("SUBSTR:%d,%d", $o, $l));
 			$fa->seq( substr($fa->{seq}, $o, $l) );
 		}else{
@@ -400,6 +400,10 @@ Get entire sequence as FASTA string. Takes line_width => INT, default 80, 0 for 
 
 sub string{
     my ($self, $lw) = (@_);
+    if (! defined($self->{seq}) || $self->{seq} eq ""){
+        warn __PACKAGE__."::string: >", $self->id, " has empty sequence. Returning empty sting";
+        return "";
+    }
     if ( @_ != 2 && defined $lw) { # not single/no option: overloaded (undef) or single opt line width
         my %p = (line_width => 80, @_[1..$#_]);
         if ($p{fastq}) { # return FASTQ string
@@ -495,8 +499,9 @@ Get/Set the seq.
 
 sub seq{
 	my ($self, $seq) = @_;
-	if($seq){
-		$seq =~tr/\n//d;
+	if(defined $seq){
+                $seq =~tr/\n//d;
+                warn __PACKAGE__."::seq: >", $self->id, " set to zero-length sequence. Not a valid Fasta record\n" if $seq eq "";
 		$self->{seq} = $seq
 	};
 	return $self->{seq};
